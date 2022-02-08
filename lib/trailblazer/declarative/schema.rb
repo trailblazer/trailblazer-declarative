@@ -52,17 +52,24 @@ module Trailblazer
     end
 
     class State # < Hash # FIXME: who is providing the immutable API?
+      def self.dup(value, **) # DISCUSS: should that be here?
+        value.dup
+      end
+
       def initialize#(fields)
         @fields        = {}#fields
         @field_options = {}
       end
 
-      def add!(path, value, inherit: :dup)
+      def add!(path, value, inherit: State.method(:dup))
         @fields[path]        = value
         @field_options[path] = {inherit: inherit}
         self
       end
 
+      # Tries to retrieve {path}, if it exists {block} is called
+      # and receives the old value.
+      # The return value of the block will be the new value.
       def update!(path, &block)
         value = get(path)
         new_value = yield(value, **{})
@@ -75,6 +82,18 @@ module Trailblazer
 
       def set!(path, value)
         @fields[path] = value
+      end
+
+      def copy(**options) # DISCUSS: make class method?
+        inherited_fields = @fields.collect do |path, value|
+          path_options = @field_options.fetch(path)
+          # puts "@@@@#{path}@ #{value.inspect} ... #{path_options.fetch(:inherit)}"
+          inherited_value = path_options.fetch(:inherit).(value, **options)
+
+          [path, [inherited_value, path_options]]
+        end.to_h
+
+        Declarative.State(inherited_fields)
       end
     end
   end

@@ -43,7 +43,7 @@ class StateTest < Minitest::Spec
     deserializer = Array.new
     original_deserializer_id = deserializer.object_id
 
-    state = declarative.State("artifact/deserializer/activity" => [deserializer, inherit: :dup]) # TODO: how to initialize certain fields?
+    state = declarative.State("artifact/deserializer/activity" => [deserializer, inherit: declarative::State.method(:dup)]) # TODO: how to initialize certain fields?
 
     # copy
     state.add!(:sequence, [1,2])
@@ -58,19 +58,15 @@ class StateTest < Minitest::Spec
   ## two different objects
     refute_equal deserializer, updated_deserializer
 
+  ## {#copy}
+    new_state = state.copy # TODO: test {inheriter: inherited} for replay
 
+    state.update!("artifact/deserializer/activity") do |value, **| value + [4,5] end
+    new_state.update!("artifact/deserializer/activity") do |value, **| value + [4,5,6] end
 
-
-  # # DISCUSS: this is not the intended way of using it.
-  # ## we can mutate initialized fields
-  #   state.get("artifact/deserializer/activity") << 3 # hardcore-mutable, DISCUSS
-  #   assert_equal state.get("artifact/deserializer/activity").inspect, %{[3]}
-
-
-
-  # ## we can override initialized fields
-  #   state.set!("artifact/deserializer/activity", [99])  # hardcore-mutable, DISCUSS
-  #   assert_equal state.get("artifact/deserializer/activity").inspect, %{[99]}
+  ## no leakage
+    assert_equal state.get("artifact/deserializer/activity").inspect, %{[2, 3, 4, 5]}
+    assert_equal new_state.get("artifact/deserializer/activity").inspect, %{[2, 3, 4, 5, 6]}
   end
 end
 
