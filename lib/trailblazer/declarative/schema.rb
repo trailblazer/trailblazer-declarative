@@ -1,5 +1,11 @@
 module Trailblazer
   module Declarative
+    def self.Schema(&block)
+      Class.new do
+        extend Trailblazer::Declarative::Schema
+        instance_exec(&block)
+      end
+    end
     # Include this to maintain inheritable, nested schemas with ::defaults and
     # ::feature the way we have it in Representable, Reform, and Disposable.
     #
@@ -39,8 +45,37 @@ module Trailblazer
     end # Schema
 
     # Class-wide configuration data
-    class State < Hash # FIXME: who is providing the immutable API?
+    def self.State(tuples={})
+      state = State.new
+      tuples.each { |path, (value, options)| state.add!(path, value, **options) }
+      state
+    end
 
+    class State # < Hash # FIXME: who is providing the immutable API?
+      def initialize#(fields)
+        @fields        = {}#fields
+        @field_options = {}
+      end
+
+      def add!(path, value, inherit: :dup)
+        @fields[path]        = value
+        @field_options[path] = {inherit: inherit}
+        self
+      end
+
+      def update!(path, &block)
+        value = get(path)
+        new_value = yield(value, **{})
+        set!(path, new_value)
+      end
+
+      def get(path)
+        @fields.fetch(path)
+      end
+
+      def set!(path, value)
+        @fields[path] = value
+      end
     end
   end
 end

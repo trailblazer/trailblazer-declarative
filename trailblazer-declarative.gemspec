@@ -8,7 +8,7 @@ Gem::Specification.new do |spec|
   spec.authors       = ["Nick Sutterer"]
   spec.email         = ["apotonick@gmail.com"]
 
-  spec.summary       = "TDO: Write a short summary, because RubyGems requires one."
+  spec.summary       = "Generic DSL providing schemas and inheritance."
   spec.homepage      = "https://github.com/trailblazer/trailblazer-declarative"
   spec.required_ruby_version = Gem::Requirement.new(">= 2.4.0")
 
@@ -27,6 +27,7 @@ Gem::Specification.new do |spec|
 
   # Uncomment to register a new dependency of your gem
   # spec.add_dependency "example-gem", "~> 1.0"
+  spec.add_development_dependency "minitest-line"
 
   # For more information and examples about making a new gem, checkout our
   # guide at: https://bundler.io/guides/creating_gem.html
