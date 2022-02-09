@@ -27,14 +27,14 @@ module Trailblazer
       # end
 
       module DSL
-        def initialize_state!()
-          @state = State.new
-        end
+        # def initialize_state!()
+        #   @state = State.new
+        # end
 
-        # @return State
-        def update_state!(key, value)
-          @state = @state.merge(key => value)
-        end
+        # # @return State
+        # def update_state!(key, value)
+        #   @state = @state.merge(key => value)
+        # end
 
         def property(name, options={}, &block)
           # heritage.record(:property, name, options, &block)
@@ -42,59 +42,28 @@ module Trailblazer
           # build_definition(name, options, &block)
         end
       end
+
+      module State
+        def initialize_state!(tuples)
+          @state = Declarative.State(tuples)
+        end
+
+        def state
+          @state
+        end
+
+        module Inherited
+          # DISCUSS: this is *not* a class method and will not be executed when extended the first time.
+          def inherited(subclass)
+            super
+
+            inherited_fields = state.copy_fields(subclass: subclass)
+
+            subclass.initialize_state!(inherited_fields) # TODO: discuss, should this be done "in" the subclass rather than here?
+          end
+        end
+      end # Schema::State
     end # Schema
 
-    # Class-wide configuration data
-    def self.State(tuples={})
-      state = State.new
-      tuples.each { |path, (value, options)| state.add!(path, value, **options) }
-      state
-    end
-
-    class State # < Hash # FIXME: who is providing the immutable API?
-      def self.dup(value, **) # DISCUSS: should that be here?
-        value.dup
-      end
-
-      def initialize#(fields)
-        @fields        = {}#fields
-        @field_options = {}
-      end
-
-      def add!(path, value, inherit: State.method(:dup))
-        @fields[path]        = value
-        @field_options[path] = {inherit: inherit}
-        self
-      end
-
-      # Tries to retrieve {path}, if it exists {block} is called
-      # and receives the old value.
-      # The return value of the block will be the new value.
-      def update!(path, &block)
-        value = get(path)
-        new_value = yield(value, **{})
-        set!(path, new_value)
-      end
-
-      def get(path)
-        @fields.fetch(path)
-      end
-
-      def set!(path, value)
-        @fields[path] = value
-      end
-
-      def copy(**options) # DISCUSS: make class method?
-        inherited_fields = @fields.collect do |path, value|
-          path_options = @field_options.fetch(path)
-          # puts "@@@@#{path}@ #{value.inspect} ... #{path_options.fetch(:inherit)}"
-          inherited_value = path_options.fetch(:inherit).(value, **options)
-
-          [path, [inherited_value, path_options]]
-        end.to_h
-
-        Declarative.State(inherited_fields)
-      end
-    end
   end
 end

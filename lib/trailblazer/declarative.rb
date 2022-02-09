@@ -7,4 +7,5 @@ module Trailblazer
   end
 end
 
+require_relative "declarative/state"
 require_relative "declarative/schema"

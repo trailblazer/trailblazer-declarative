@@ -1,9 +1,56 @@
 require "test_helper"
 
 class SchemaTest < Minitest::Spec
+  Instance = Class.new do
+    extend Trailblazer::Declarative::Schema::State
+    extend Trailblazer::Declarative::Schema::State::Inherited
+
+    initialize_state!("reform/properties" => [Array.new, {}])
+  end
+
     # we want a "normalizer" pipe per DSL call (e.g. `step` or `property`)
     # we want "immutable" inheritance
-  it "lowest, most primitive API" do
+  it "what" do
+    song = Class.new do # Reform::Form
+      extend Trailblazer::Declarative::Schema::State
+      extend Trailblazer::Declarative::Schema::State::Inherited
+      # THIS we only want once?
+      initialize_state!(
+        "artifact/deserializer" => [Hash.new, {}],
+        "artifact/hydrate"      => [Array.new, {}],
+      )
+
+      # alternatively, call state.add!("artifact/deserializer")
+      state.add!(:sequence, Instance, inherit: Trailblazer::Declarative::State.method(:subclass))
+    end
+
+    assert_equal song.state.get("artifact/deserializer").inspect, %{{}}
+    assert_equal song.state.get("artifact/hydrate").inspect, %{[]}
+    assert_equal song.state.get(:sequence).inspect, %{SchemaTest::Instance}
+
+    hit = Class.new(song) do
+      state.update!(:sequence) { |instance| instance.state.update!("reform/properties") { |ary| ary << 99; ary }; instance }
+    end
+
+    banger = Class.new(hit) do
+  ## mutate field, it should not bleed through to other classes.
+      state.update!("artifact/hydrate") { |ary| ary << 1}
+      state.update!(:sequence) { |instance| instance.state.update!("reform/properties") { |ary| ary << 999; ary }; instance }
+    end
+
+
+    assert_equal song.state.get("artifact/deserializer").inspect, %{{}}
+    assert_equal song.state.get("artifact/hydrate").inspect, %{[]}
+    assert_equal song.state.get(:sequence).state.get("reform/properties").inspect, %{[]}
+
+    assert_equal hit.state.get("artifact/deserializer").inspect, %{{}}
+    assert_equal hit.state.get("artifact/hydrate").inspect, %{[]}
+    assert_equal hit.state.get(:sequence).state.get("reform/properties").inspect, %{[99]}
+
+    assert_equal banger.state.get("artifact/deserializer").inspect, %{{}}
+    assert_equal banger.state.get("artifact/hydrate").inspect, %{[1]}
+    assert_equal banger.state.get(:sequence).state.get("reform/properties").inspect, %{[99, 999]}
+  end
 
 =begin
 
@@ -36,29 +83,4 @@ inherit:
   then run Normalizer
 =end
 
-    # twin = Class.new do
-    twin = Trailblazer::Declarative.Schema do
-      update_state!(:parser, {type: Object})
-      update_state!(:hydrate, {type: Module})
-
-      # property :title # here, we want to create three different fields in state
-
-      # property :title, inherit: true # copy over old config, where to default? and how to extend, say, taskWrap :extensions?
-
-      class << self
-        def _state; @state; end
-      end
-    end
-
-    assert_equal twin._state.to_h.inspect, %{{:parser=>{:type=>Object}, :hydrate=>{:type=>Module}}}
-
-    hit_twin = Class.new(twin) do
-      update_state!(:hydrate, {type: Class})
-    end
-
-  ## original state is still the same
-    assert_equal twin._state.to_h.inspect, %{{:parser=>{:type=>Object}, :hydrate=>{:type=>Module}}}
-  ## new state is changed
-    assert_equal hit_twin._state.to_h.inspect, %{{:parser=>{:type=>Object}, :hydrate=>{:type=>Class}}}
-  end
 end
