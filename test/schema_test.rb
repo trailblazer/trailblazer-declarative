@@ -21,7 +21,7 @@ class SchemaTest < Minitest::Spec
       )
 
       # alternatively, call state.add!("artifact/deserializer")
-      state.add!(:sequence, Instance, inherit: Trailblazer::Declarative::State.method(:subclass))
+      state.add!(:sequence, Instance, copy: Trailblazer::Declarative::State.method(:subclass))
     end
 
     assert_equal song.state.get("artifact/deserializer").inspect, %{{}}

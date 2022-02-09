@@ -7,7 +7,7 @@ module Trailblazer
       state
     end
 
-    class State # < Hash # FIXME: who is providing the immutable API?
+    class State # FIXME: who is providing the immutable API?
       def self.dup(value, **) # DISCUSS: should that be here?
         value.dup
       end
@@ -16,14 +16,14 @@ module Trailblazer
         Class.new(value)
       end
 
-      def initialize#(fields)
-        @fields        = {}#fields
+      def initialize
+        @fields        = {}
         @field_options = {}
       end
 
-      def add!(path, value, inherit: State.method(:dup))
+      def add!(path, value, copy: State.method(:dup))
         @fields[path]        = value
-        @field_options[path] = {inherit: inherit}
+        @field_options[path] = {copy: copy}
         self
       end
 
@@ -47,7 +47,7 @@ module Trailblazer
       def copy_fields(**options)
         inherited_fields = @fields.collect do |path, value|
           path_options = @field_options.fetch(path)
-          inherited_value = path_options.fetch(:inherit).(value, **options)
+          inherited_value = path_options.fetch(:copy).(value, **options)
 
           [path, [inherited_value, path_options]]
         end.to_h

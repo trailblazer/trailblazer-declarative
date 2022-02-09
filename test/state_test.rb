@@ -43,7 +43,7 @@ class StateTest < Minitest::Spec
     deserializer = Array.new
     original_deserializer_id = deserializer.object_id
 
-    state = declarative.State("artifact/deserializer/activity" => [deserializer, inherit: declarative::State.method(:dup)]) # TODO: how to initialize certain fields?
+    state = declarative.State("artifact/deserializer/activity" => [deserializer, copy: declarative::State.method(:dup)]) # TODO: how to initialize certain fields?
 
     # copy
     state.add!(:sequence, [1,2])
