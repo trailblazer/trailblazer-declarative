@@ -45,7 +45,7 @@ class StateTest < Minitest::Spec
 
     state = declarative.State("artifact/deserializer/activity" => [deserializer, copy: declarative::State.method(:dup)]) # TODO: how to initialize certain fields?
 
-    # copy
+    # strategy :copy
     state.add!(:sequence, [1,2])
     # TODO: {inherit: :self} etc
 
