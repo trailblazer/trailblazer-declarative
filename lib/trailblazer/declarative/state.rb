@@ -40,6 +40,7 @@ module Trailblazer
         @fields.fetch(path)
       end
 
+      # @private
       def set!(path, value)
         @fields[path] = value
       end

@@ -58,13 +58,17 @@ class StateTest < Minitest::Spec
   ## two different objects
     refute_equal deserializer, updated_deserializer
 
-  ## {#copy}
+  #~ {#copy}
     new_state = state.copy # TODO: test {inheriter: inherited} for replay
+    #= new_state is a copy of original state
+    assert_equal new_state.get("artifact/deserializer/activity").inspect, %{[2, 3]}
+    assert_equal new_state.get(:sequence).inspect, %{[1, 2]}
+
 
     state.update!("artifact/deserializer/activity") do |value, **| value + [4,5] end
     new_state.update!("artifact/deserializer/activity") do |value, **| value + [4,5,6] end
 
-  ## no leakage
+  #= no leakage
     assert_equal state.get("artifact/deserializer/activity").inspect, %{[2, 3, 4, 5]}
     assert_equal new_state.get("artifact/deserializer/activity").inspect, %{[2, 3, 4, 5, 6]}
   end
