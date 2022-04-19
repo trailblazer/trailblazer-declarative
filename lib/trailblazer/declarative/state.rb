@@ -46,7 +46,7 @@ module Trailblazer
       end
 
       def copy_fields(**options)
-        inherited_fields = @fields.collect do |path, value|
+        @fields.collect do |path, value|
           path_options = @field_options.fetch(path)
           inherited_value = path_options.fetch(:copy).(value, **options)
 
